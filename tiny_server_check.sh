@@ -1,14 +1,24 @@
 #!/bin/sh
 # --------------------------------------------------------------
-# This script checks server availability by probing some services.
+# This script checks service and server availability by probing
+# some services.
+#
 # If a service is down, the script sends a message via SMS. Therfore
 # it uses the simple-fax-sms script, you can get from github:
 # https://github.com/nitram2342/simple-fax-sms
-# A notification is also sent, when the service is up, again.
+# A notification is also sent, when the service is up again.
+# The up or down state is kept via state files and as long
+# as nothing happens, you won't get further messages.
+#
+# In order to use this script for your own purposes, please:
+# - adjust the configuration in the onfiguration section
+# - adjust availability check section
+# - adjust the notification section if necessary
+#
 # This script can be called from cron, for example like this:
 #
 # $ crontab -e
-# */2 * * * * /root/tiny_server_check.sh
+# */2 * * * * /home/pi/tiny_server_check.sh
 #
 #
 # Author: Martin Schobert <martin@weltregierung.de>
@@ -17,7 +27,7 @@
 
 
 #
-# Configuration
+# Configuration section
 #
 
 # SMS notification
@@ -47,10 +57,14 @@ TIMEOUT=10
 # Where to store states
 STATE_DIR=~/.tiny_server_check/
 
-# End of configurtion
+# End of configuration
 # _______________________________________________
 
 TEXT_TO_SEND=""
+
+#
+# Helper function section
+#
 
 test_tool() {
     CMD=$1
@@ -142,7 +156,7 @@ then
 fi
 
 #
-# Do availability check
+# Availability check section
 #
 
 [ "$VERBOSE" -eq "1" ] && echo "+ Test DNS"
@@ -165,6 +179,14 @@ test_smtp ${STATE_DIR}"/.smtp" \
 	  "SMTP: example .comis up"
 
 
+# End of availability checks
+# _______________________________________________
+
+
+#
+# Notification section
+#
+
 # check if there is a message to sent
 if [ ! -z "${TEXT_TO_SEND}" ]
 then
@@ -174,3 +196,6 @@ then
 else
     [ "$VERBOSE" -eq "1" ] && echo "+ Nothing to sent"
 fi
+
+# End of notification
+# _______________________________________________
