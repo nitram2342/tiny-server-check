@@ -1,0 +1,6 @@
+Simple one script fits all service monitoring.
+
+No, not really, usually I use Munin for monitoring, but for certain critical
+systems or for infrastructure my Munin instance depends on, I want to receive
+an SMS. Configuration is done in the script. Just have a look.
+
