@@ -111,8 +111,9 @@ test_smtp() {
     EXPECTED=$3
     TEXT_FAIL=$4
     TEXT_OK=$5
+    PORT=$6 || 25
 
-    ${NC} -w ${TIMEOUT} ${HOST} 25 | grep "${EXPECTED}" >/dev/null
+    ${NC} -w ${TIMEOUT} ${HOST} ${PORT} | grep "${EXPECTED}" >/dev/null
     send_sms_and_keep_state $? "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
 }
 
