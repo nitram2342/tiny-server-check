@@ -60,8 +60,8 @@ STATE_DIR=~/.tiny_server_check/
 # Load configuatration file
 #
 
-PROG_DIR="$(dirname "$0")"
-. "${PROG_DIR}/config.inc"
+CONFIG_FILE="$(dirname "$0")""/config.inc"
+. ${CONFIG_FILE}
 
 
 
@@ -149,8 +149,8 @@ test_dns() {
 #
 
 # Check file permissions of this script
-if [ $(stat -c %a $0) != 700 ]; then
-    echo + Please fix script\'s file permissions to 0700
+if [ $(stat -c %a ${CONFIG_FILE}) != 600 ]; then
+    echo + Please fix config file permissions to 0600
     exit 1
 fi
 
