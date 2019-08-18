@@ -3,22 +3,22 @@
 # This script checks service and server availability by probing
 # some services.
 #
-# If a service is down, the script sends a message via SMS. Therfore
-# it uses the simple-fax-sms script, you can get from github:
-# https://github.com/nitram2342/simple-fax-sms
+# If a service is down, the script sends a message via SMS.
+# Therfore, it uses the simple-fax-sms script, you can get from
+# github: https://github.com/nitram2342/simple-fax-sms
 # A notification is also sent, when the service is up again.
 # The up or down state is kept via state files and as long
 # as nothing happens, you won't get further messages.
 #
 # In order to use this script for your own purposes, please:
-# - adjust the configuration in the onfiguration section
-# - adjust availability check section
-# - adjust the notification section if necessary
+# - adjust the configuration in the config.inc
+# - adjust availability check section in config.inc
+# - adjust the notification section if necessary in config.inc
 #
 # This script can be called from cron, for example like this:
 #
 # $ crontab -e
-# */2 * * * * /home/pi/tiny_server_check.sh
+# */2 * * * * /home/pi/tiny-server-check/tiny-server-check.sh
 #
 #
 # Author: Martin Schobert <martin@weltregierung.de>
@@ -27,17 +27,12 @@
 
 
 #
-# Configuration section
+# Standard configuration section
 #
 
-# SMS notification
-PHONE_NUM=+49XXXXXXXXXXXXXXX
-SIMPLEFAXDE_USER=example@example.com
-export SIMPLEFAXDE_PASS=XXXXXXXXXXXXXXX
 
-SMS_CLIENT="/usr/local/bin/simple_fax_sms --user ${SIMPLEFAXDE_USER} --phone ${PHONE_NUM} --stdin --quiet"
-
-# Standard tools
+# Tools
+SMS_CLIENT=/usr/local/bin/simple_fax_sms
 NC=/bin/nc
 WGET=/usr/bin/wget
 RM=/bin/rm
@@ -45,11 +40,11 @@ TOUCH=/bin/touch
 MKDIR=/bin/mkdir
 DIG=/usr/bin/dig
 
-# Do a failure test
-FAILTEST=0
-
 # Uncomment to do some logging.
 VERBOSE=0
+
+# Do a failure test
+FAILTEST=0
 
 # Timeout value
 TIMEOUT=10
@@ -57,8 +52,18 @@ TIMEOUT=10
 # Where to store states
 STATE_DIR=~/.tiny_server_check/
 
-# End of configuration
+# End of standard configuration
 # _______________________________________________
+
+
+#
+# Load configuatration file
+#
+
+PROG_DIR="$(dirname "$0")"
+. "${PROG_DIR}/config.inc"
+
+
 
 TEXT_TO_SEND=""
 
@@ -129,8 +134,13 @@ test_dns() {
     TEXT_FAIL=$4
     TEXT_OK=$5
 
-    ${DIG} @${SERVER} ${RECORD} >/dev/null 2>&1 
-    send_sms_and_keep_state $? "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
+    ${DIG} @${SERVER} ${RECORD} >/dev/null 2>&1
+    if [ $? -ne 0 ]
+    then
+	# failed, try again
+	${DIG} @${SERVER} ${RECORD} >/dev/null 2>&1
+	send_sms_and_keep_state $? "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
+    fi
 }
 
 
@@ -159,25 +169,7 @@ fi
 # Availability check section
 #
 
-[ "$VERBOSE" -eq "1" ] && echo "+ Test DNS"
-test_dns ${STATE_DIR}"/.dns" \
-	 ns10.example.com www.example.com \
-	 "DNS: ns10.example.com is down" \
-	 "DNS: ns10.example.com is up"
-	 
-
-[ "$VERBOSE" -eq "1" ] && echo "+ Test WWW"
-test_http ${STATE_DIR}"/.http" \
-	  "https://example.com" "HTML" \
-	  "HTTP: example.com is down" \
-	  "HTTP: example.com is up"
-
-[ "$VERBOSE" -eq "1" ] && echo "+ Test SMTP"
-test_smtp ${STATE_DIR}"/.smtp" \
-	  mail.example.com "ESMTP" \
-	  "SMTP: example.com is down. Run test: https://mxtoolbox.com/SuperTool.aspx?action=smtp%3amail.example.com" \
-	  "SMTP: example .comis up"
-
+my_own_tests
 
 # End of availability checks
 # _______________________________________________
@@ -192,7 +184,7 @@ if [ ! -z "${TEXT_TO_SEND}" ]
 then
     [ "$VERBOSE" -eq "1" ] && echo "+ Send notification"
     #echo "${TEXT_TO_SEND}"
-    echo "${TEXT_TO_SEND}" | ${SMS_CLIENT}
+    echo "${TEXT_TO_SEND}" | ${SMS_CLIENT} --user ${SIMPLEFAXDE_USER} --phone ${PHONE_NUM} --stdin --quiet
 else
     [ "$VERBOSE" -eq "1" ] && echo "+ Nothing to sent"
 fi
