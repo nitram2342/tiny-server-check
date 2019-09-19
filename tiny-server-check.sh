@@ -49,6 +49,9 @@ FAILTEST=0
 # Timeout value
 TIMEOUT=10
 
+# time to wait for a recheck after a failed check
+WAIT=5
+
 # Where to store states
 STATE_DIR=~/.tiny_server_check/
 
@@ -114,7 +117,19 @@ test_smtp() {
     PORT=$6 || 25
 
     ${NC} -w ${TIMEOUT} ${HOST} ${PORT} | grep "${EXPECTED}" >/dev/null
-    send_sms_and_keep_state $? "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
+    if [ $? -ne 0 ]
+    then
+	# failed, try again
+	sleep ${WAIT}
+	${NC} -w ${TIMEOUT} ${HOST} ${PORT} | grep "${EXPECTED}" >/dev/null
+	if [ $? -ne 0 ]
+	then
+	    # failed, try again
+	    sleep ${WAIT}
+	    ${NC} -w ${TIMEOUT} ${HOST} ${PORT} | grep "${EXPECTED}" >/dev/null
+	    send_sms_and_keep_state $? "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
+	fi
+    fi
 }
 
 test_http() {
@@ -125,7 +140,19 @@ test_http() {
     TEXT_OK=$5
     
     ${WGET} ${URL} --timeout ${TIMEOUT} -O - 2>/dev/null | grep "${EXPECTED}" >/dev/null
-    send_sms_and_keep_state $? "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
+    if [ $? -ne 0 ]
+    then
+	# failed, try again
+	sleep ${WAIT}
+	${WGET} ${URL} --timeout ${TIMEOUT} -O - 2>/dev/null | grep "${EXPECTED}" >/dev/null
+	if [ $? -ne 0 ]
+	then
+	    # failed, try again
+	    sleep ${WAIT}
+	    ${WGET} ${URL} --timeout ${TIMEOUT} -O - 2>/dev/null | grep "${EXPECTED}" >/dev/null
+	    send_sms_and_keep_state $? "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
+	fi
+    fi
 }
 
 test_dns() {
@@ -139,8 +166,15 @@ test_dns() {
     if [ $? -ne 0 ]
     then
 	# failed, try again
+	sleep ${WAIT}
 	${DIG} @${SERVER} ${RECORD} >/dev/null 2>&1
-	send_sms_and_keep_state $? "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
+	if [ $? -ne 0 ]
+	then
+	    # failed, try again
+	    sleep ${WAIT}
+	    ${DIG} @${SERVER} ${RECORD} >/dev/null 2>&1
+	    send_sms_and_keep_state $? "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
+	fi
     fi
 }
 
