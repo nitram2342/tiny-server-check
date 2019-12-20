@@ -92,23 +92,23 @@ test_tool() {
     fi
 }
 
-send_sms_and_keep_state() {
-    EXIT_CODE=$1
+check_service_state() {
+    SERVICE_STATUS=$1
     STATE_FILE=$2
     TEXT_FAIL=$3
     TEXT_OK=$4
 
     if [ "${VERBOSE}" -eq 1 ] ; then
-	echo "+ Should send an SMS:"
-	echo "  Exit code : ${EXIT_CODE}"
-	echo "  State file: ${STATE_FILE}"
-	echo "  Text fail : ${TEXT_FAIL}"
-	echo "  Text OK   : ${TEXT_OK}"
+	echo "+ Check service state"
+	echo "  Service status : ${SERVICE_STATUS}"
+	echo "  State file     : ${STATE_FILE}"
+	echo "  Text fail      : ${TEXT_FAIL}"
+	echo "  Text OK        : ${TEXT_OK}"
     fi
     
-    if [ ${EXIT_CODE} -ne 0 ] || [ "${FAILTEST}" -eq 1 ]
+    if [ ${SERVICE_STATUS} -eq 0 ] || [ "${FAILTEST}" -eq 1 ]
     then
-	[ "${VERBOSE}" -eq 1 ] && echo "+ Test failed"
+	[ "${VERBOSE}" -eq 1 ] && echo "+ Test failed."
 
 	if [ ! -f "${STATE_FILE}" ]
 	then
@@ -116,7 +116,7 @@ send_sms_and_keep_state() {
 	    ${TOUCH} "${STATE_FILE}"
 	fi
     else
-	[ "${VERBOSE}" -eq 1 ] && echo "+ Test ok"
+	[ "${VERBOSE}" -eq 1 ] && echo "+ Test is ok."
 
 	if [ -f "${STATE_FILE}" ]
 	then
@@ -137,20 +137,25 @@ test_smtp() {
     TEXT_OK=$5
     PORT=$6 || 25
 
-    ${NC} -w ${TIMEOUT} ${HOST} ${PORT} | grep "${EXPECTED}" >/dev/null
-    if [ $? -ne 0 ]
-    then
-	# failed, try again
-	sleep ${WAIT}
+    status=1
+    counter=0
+    
+    for i in 1 2 3
+    do
 	${NC} -w ${TIMEOUT} ${HOST} ${PORT} | grep "${EXPECTED}" >/dev/null
 	if [ $? -ne 0 ]
 	then
 	    # failed, try again
 	    sleep ${WAIT}
-	    ${NC} -w ${TIMEOUT} ${HOST} ${PORT} | grep "${EXPECTED}" >/dev/null
-	    send_sms_and_keep_state $? "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
+	    counter=$((counter+1))
+	else
+	    break
 	fi
-    fi
+    done
+
+    [ "$counter" -eq 3 ] && status=0
+       
+    check_service_state ${status} "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
 }
 
 test_http() {
@@ -160,20 +165,25 @@ test_http() {
     TEXT_FAIL=$4
     TEXT_OK=$5
     
-    ${WGET} ${URL} --timeout ${TIMEOUT} -O - 2>/dev/null | grep "${EXPECTED}" >/dev/null
-    if [ $? -ne 0 ]
-    then
-	# failed, try again
-	sleep ${WAIT}
+    status=1
+    counter=0
+    
+    for i in 1 2 3
+    do
 	${WGET} ${URL} --timeout ${TIMEOUT} -O - 2>/dev/null | grep "${EXPECTED}" >/dev/null
 	if [ $? -ne 0 ]
 	then
 	    # failed, try again
 	    sleep ${WAIT}
-	    ${WGET} ${URL} --timeout ${TIMEOUT} -O - 2>/dev/null | grep "${EXPECTED}" >/dev/null
-	    send_sms_and_keep_state $? "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
+	    counter=$((counter+1))
+	else
+	    break
 	fi
-    fi
+    done
+
+    [ "$counter" -eq 3 ] && status=0
+       
+    check_service_state ${status} "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
 }
 
 test_dns() {
@@ -183,20 +193,25 @@ test_dns() {
     TEXT_FAIL=$4
     TEXT_OK=$5
 
-    ${DIG} @${SERVER} ${RECORD} >/dev/null 2>&1
-    if [ $? -ne 0 ]
-    then
-	# failed, try again
-	sleep ${WAIT}
+    status=1
+    counter=0
+       
+    for i in 1 2 3
+    do
 	${DIG} @${SERVER} ${RECORD} >/dev/null 2>&1
 	if [ $? -ne 0 ]
 	then
 	    # failed, try again
 	    sleep ${WAIT}
-	    ${DIG} @${SERVER} ${RECORD} >/dev/null 2>&1
-	    send_sms_and_keep_state $? "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
+	    counter=$((counter+1))
+	else
+	    break
 	fi
-    fi
+    done
+
+    [ "$counter" -eq 3 ] && status=0
+       
+    check_service_state ${status} "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
 }
 
 
