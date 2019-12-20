@@ -129,13 +129,13 @@ check_service_state() {
 	
 }
 
-test_smtp() {
+test_tcp_banner() {
     STATE_FILE=$1
     HOST=$2
     EXPECTED=$3
     TEXT_FAIL=$4
     TEXT_OK=$5
-    PORT=$6 || 25
+    PORT=$6
 
     status=1
     counter=0
@@ -156,6 +156,26 @@ test_smtp() {
     [ "$counter" -eq 3 ] && status=0
        
     check_service_state ${status} "${STATE_FILE}" "${TEXT_FAIL}" "${TEXT_OK}"
+}
+
+test_smtp() {
+    STATE_FILE=$1
+    HOST=$2
+    EXPECTED=$3
+    TEXT_FAIL=$4
+    TEXT_OK=$5
+    PORT=$6 || 25
+    test_tcp_banner "${STATE_FILE}" "${HOST}" "${EXPECTED}" "${TEXT_FAIL}" "${TEXT_OK}" "${PORT}"
+}
+
+test_ssh() {
+    STATE_FILE=$1
+    HOST=$2
+    EXPECTED=$3
+    TEXT_FAIL=$4
+    TEXT_OK=$5
+    PORT=$6 || 25
+    test_tcp_banner "${STATE_FILE}" "${HOST}" "${EXPECTED}" "${TEXT_FAIL}" "${TEXT_OK}" "${PORT}"
 }
 
 test_http() {

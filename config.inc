@@ -48,6 +48,13 @@ my_own_tests() {
 	      "SMTP: example.com is down. Run test: https://mxtoolbox.com/SuperTool.aspx?action=smtp%3amail.example.com" \
 	      "SMTP: example .comis up"
 
+    [ "$VERBOSE" -eq 1 ] && echo "+ Test SSH"
+    test_ssh ${STATE_DIR}"/.ssh" \
+              example.com "SSH" \
+              "SSH: example.com is down" \
+              "SSH: example.com is up" \
+              22
+
 }
 
 
