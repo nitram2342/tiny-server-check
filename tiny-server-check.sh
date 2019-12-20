@@ -27,7 +27,8 @@
 
 
 #
-# Standard configuration section
+# Standard configuration section -
+# settings may be overwritten by config.inc
 #
 
 
@@ -54,6 +55,14 @@ WAIT=5
 
 # Where to store states
 STATE_DIR=~/.tiny_server_check/
+
+# Allow sending a test message every month at the time specified.
+# This requires the script to be called frequently that there is
+# a chance to be run at this time. Hours and minutes must be
+# written in %02d format.
+TEST_SMS=1
+TEST_SMS_HOUR="09"
+TEST_SMS_MINUTE="00"
 
 # End of standard configuration
 # _______________________________________________
@@ -88,23 +97,35 @@ send_sms_and_keep_state() {
     STATE_FILE=$2
     TEXT_FAIL=$3
     TEXT_OK=$4
+
+    if [ "${VERBOSE}" -eq 1 ] ; then
+	echo "+ Should send an SMS:"
+	echo "  Exit code : ${EXIT_CODE}"
+	echo "  State file: ${STATE_FILE}"
+	echo "  Text fail : ${TEXT_FAIL}"
+	echo "  Text OK   : ${TEXT_OK}"
+    fi
     
-    if [ ${EXIT_CODE} -ne 0 ] || [ ${FAILTEST} -eq 1 ]
+    if [ ${EXIT_CODE} -ne 0 ] || [ "${FAILTEST}" -eq 1 ]
     then
-	#echo "Failed"	
+	[ "${VERBOSE}" -eq 1 ] && echo "+ Test failed"
+
 	if [ ! -f "${STATE_FILE}" ]
 	then
 	    TEXT_TO_SEND="${TEXT_TO_SEND}\n${TEXT_FAIL}"
 	    ${TOUCH} "${STATE_FILE}"
 	fi
     else
-	#echo "OK"
+	[ "${VERBOSE}" -eq 1 ] && echo "+ Test ok"
+
 	if [ -f "${STATE_FILE}" ]
 	then
 	    TEXT_TO_SEND="${TEXT_TO_SEND}\n${TEXT_OK}"
 	    ${RM} "${STATE_FILE}"
 	fi
     fi
+    
+    [ "${VERBOSE}" -eq 1 ] && echo "+ Message text is: ${TEXT_TO_SEND}"
 	
 }
 
@@ -183,22 +204,41 @@ test_dns() {
 # Main script
 #
 
-# Check file permissions of this script
+# Check file permissions of the config file to not leak
+# credentials. The check does not look up the file owner
+# and hence is only a minial check.
 if [ $(stat -c %a ${CONFIG_FILE}) != 600 ]; then
     echo + Please fix config file permissions to 0600
     exit 1
 fi
 
-for tool in ${NC} ${WGET} ${RM} ${TOUCH} ${MKDIR} ${DIG}; do
+# Check if helper tools exist. If a tool does not exist, the program stops.
+for tool in ${NC} ${WGET} ${RM} ${TOUCH} ${MKDIR} ${DIG} ${SMS_CLIENT}; do
     test_tool $tool
 done
 
 
-# create own directory for states.
+# Create own directory for states.
 if [ ! -d ${STATE_DIR} ]
 then
     ${MKDIR} ${STATE_DIR}
 fi
+
+# Check if we should send a monthly test message
+DAY=`date +"%d"`
+HOUR=`date +"%H"`
+MINUTE=`date +"%M"`
+if [ "${TEST_SMS}" -eq "1" ] && \
+       [ "${DAY}" -eq "1" ] && \
+       [ "${HOUR}" -eq "${TEST_SMS_HOUR}" ] && \
+       [ "${MINUTE}" -eq "${TEST_SMS_MINUTE}" ] ; then
+    
+    echo "Tiny Server Check: This is the monthly test message." | \
+	${SMS_CLIENT} --user "${SIMPLEFAXDE_USER}" --phone "${PHONE_NUM}" --stdin --quiet
+fi
+
+
+[ "${VERBOSE}" -eq 1 ] && echo "+ FAILTEST: ${FAILTEST}"
 
 #
 # Availability check section
@@ -215,13 +255,19 @@ my_own_tests
 #
 
 # check if there is a message to sent
-if [ ! -z "${TEXT_TO_SEND}" ]
+if [ ! -z "${TEXT_TO_SEND}" ] || [ "${FAILTEST}" -eq 1 ]
 then
-    [ "$VERBOSE" -eq "1" ] && echo "+ Send notification"
-    #echo "${TEXT_TO_SEND}"
-    echo "${TEXT_TO_SEND}" | ${SMS_CLIENT} --user ${SIMPLEFAXDE_USER} --phone ${PHONE_NUM} --stdin --quiet
+
+    if [ -z "${TEXT_TO_SEND}" ] ; then
+	TEXT_TO_SEND="FAILTEST mode"
+    fi
+    
+    [ "${VERBOSE}" -eq 1 ] && echo "+ Send notification:" && echo "${TEXT_TO_SEND}"
+    echo "${TEXT_TO_SEND}" | ${SMS_CLIENT} \
+				 --user "${SIMPLEFAXDE_USER}" --phone "${PHONE_NUM}" \
+				 --stdin --quiet
 else
-    [ "$VERBOSE" -eq "1" ] && echo "+ Nothing to sent"
+    [ "${VERBOSE}" -eq 1 ] && echo "+ Nothing to sent."
 fi
 
 # End of notification
