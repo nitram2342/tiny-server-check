@@ -164,7 +164,7 @@ test_smtp() {
     EXPECTED=$3
     TEXT_FAIL=$4
     TEXT_OK=$5
-    PORT=$6 || 25
+    PORT=${6-25}
     test_tcp_banner "${STATE_FILE}" "${HOST}" "${EXPECTED}" "${TEXT_FAIL}" "${TEXT_OK}" "${PORT}"
 }
 
@@ -174,7 +174,7 @@ test_ssh() {
     EXPECTED=$3
     TEXT_FAIL=$4
     TEXT_OK=$5
-    PORT=$6 || 25
+    PORT=${6-22}
     test_tcp_banner "${STATE_FILE}" "${HOST}" "${EXPECTED}" "${TEXT_FAIL}" "${TEXT_OK}" "${PORT}"
 }
 
