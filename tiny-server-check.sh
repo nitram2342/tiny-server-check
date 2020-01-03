@@ -263,8 +263,8 @@ fi
 DAY=`date +"%d"`
 HOUR=`date +"%H"`
 MINUTE=`date +"%M"`
-if [ "${TEST_SMS}" -eq "1" ] && \
-       [ "${DAY}" -eq "1" ] && \
+if [ "${TEST_SMS}" -eq 1 ] && \
+       [ "${DAY}" -eq "01" ] && \
        [ "${HOUR}" -eq "${TEST_SMS_HOUR}" ] && \
        [ "${MINUTE}" -eq "${TEST_SMS_MINUTE}" ] ; then
     
