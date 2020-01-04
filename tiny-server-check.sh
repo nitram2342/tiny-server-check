@@ -61,6 +61,7 @@ STATE_DIR=~/.tiny_server_check/
 # a chance to be run at this time. Hours and minutes must be
 # written in %02d format.
 TEST_SMS=1
+TEST_SMS_DAY="01"
 TEST_SMS_HOUR="09"
 TEST_SMS_MINUTE="00"
 
@@ -264,7 +265,7 @@ DAY=`date +"%d"`
 HOUR=`date +"%H"`
 MINUTE=`date +"%M"`
 if [ "${TEST_SMS}" -eq 1 ] && \
-       [ "${DAY}" -eq "01" ] && \
+       [ "${DAY}" -eq "${TEST_SMS_DAY}" ] && \
        [ "${HOUR}" -eq "${TEST_SMS_HOUR}" ] && \
        [ "${MINUTE}" -eq "${TEST_SMS_MINUTE}" ] ; then
     
