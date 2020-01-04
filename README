@@ -4,3 +4,12 @@ No, not really, usually I use Munin for monitoring, but for certain critical
 systems or for infrastructure my Munin instance depends on, I want to receive
 an SMS. Configuration is done in the included config.inc. Just have a look.
 
+Installation
+------------
+
+1. Install the SMS helper tool or adjust the scripts code to support your tool:
+
+$ sudo pip install git+https://github.com/nitram2342/simple-fax-sms
+
+2. Follow instructions in the header section of tiny-server-check.sh.
+
