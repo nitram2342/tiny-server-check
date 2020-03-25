@@ -18,7 +18,7 @@
 # This script can be called from cron, for example like this:
 #
 # $ crontab -e
-# */2 * * * * /home/pi/tiny-server-check/tiny-server-check.sh
+# */2 * * * * /home/pi/tiny-server-check/tiny-server-check.sh >/dev/null 2>&1
 #
 #
 # Author: Martin Schobert <martin@weltregierung.de>
