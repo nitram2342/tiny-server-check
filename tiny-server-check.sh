@@ -40,6 +40,7 @@ RM=/bin/rm
 TOUCH=/bin/touch
 MKDIR=/bin/mkdir
 DIG=/usr/bin/dig
+PING=/bin/ping
 
 # Uncomment to do some logging.
 VERBOSE=0
@@ -64,6 +65,11 @@ TEST_SMS=1
 TEST_SMS_DAY="01"
 TEST_SMS_HOUR="09"
 TEST_SMS_MINUTE="00"
+
+
+# We will check if we are online. If there is no Intenet,
+# then all services seem to be down.
+HOST_ONLINE_CHECK=8.8.8.8
 
 # End of standard configuration
 # _______________________________________________
@@ -236,6 +242,19 @@ test_dns() {
 }
 
 
+test_online_or_exit() {
+    
+    ${PING} -q -c 2 ${HOST_ONLINE_CHECK} >/dev/null 2>&1
+    if [ $? -eq 0 ]
+    then
+       [ "${VERBOSE}" -eq 1 ] && echo "+ We are online."
+    else
+       [ "${VERBOSE}" -eq 1 ] && echo "+ We are offline."
+       exit
+    fi
+}
+
+
 #
 # Main script
 #
@@ -249,7 +268,7 @@ if [ $(stat -c %a ${CONFIG_FILE}) != 600 ]; then
 fi
 
 # Check if helper tools exist. If a tool does not exist, the program stops.
-for tool in ${NC} ${WGET} ${RM} ${TOUCH} ${MKDIR} ${DIG} ${SMS_CLIENT}; do
+for tool in ${NC} ${WGET} ${RM} ${TOUCH} ${MKDIR} ${DIG} ${SMS_CLIENT} ${PING}; do
     test_tool $tool
 done
 
@@ -259,6 +278,9 @@ if [ ! -d ${STATE_DIR} ]
 then
     ${MKDIR} ${STATE_DIR}
 fi
+
+# Start with an online/offline check.
+test_online_or_exit
 
 # Check if we should send a monthly test message
 DAY=`date +"%d"`
