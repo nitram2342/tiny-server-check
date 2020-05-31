@@ -4,7 +4,7 @@
 # some services.
 #
 # If a service is down, the script sends a message via SMS.
-# Therfore, it uses the simple-fax-sms script, you can get from
+# Therefore, it uses the simple-fax-sms script, you can get from
 # github: https://github.com/nitram2342/simple-fax-sms
 # A notification is also sent, when the service is up again.
 # The up or down state is kept via state files and as long
@@ -261,7 +261,7 @@ test_online_or_exit() {
 
 # Check file permissions of the config file to not leak
 # credentials. The check does not look up the file owner
-# and hence is only a minial check.
+# and hence is only a minimal check.
 if [ $(stat -c %a ${CONFIG_FILE}) != 600 ]; then
     echo + Please fix config file permissions to 0600
     exit 1
